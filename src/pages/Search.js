@@ -1,5 +1,7 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import Header from '../components/Header';
+import searchAlbumsAPI from '../services/searchAlbumsAPI';
 
 class Search extends React.Component {
   constructor() {
@@ -7,6 +9,10 @@ class Search extends React.Component {
     this.state = {
       validateBtn: false,
       searchArtist: '',
+      loading: false,
+      listAlbuns: [],
+      search: false,
+      artist: '',
     };
   }
 
@@ -25,11 +31,24 @@ class Search extends React.Component {
     this.setState({ searchArtist: value }, this.validateSearch);
   };
 
+  findArtist = async (target) => {
+    target.preventDefault();
+    const { searchArtist } = this.state;
+    this.setState({ loading: true });
+    const albuns = await searchAlbumsAPI(searchArtist);
+    this.setState({ loading: false,
+      listAlbuns: albuns,
+      artist: searchArtist,
+      searchArtist: '',
+      search: true });
+  };
+
   render() {
-    const { validateBtn } = this.state;
+    const { validateBtn, loading, listAlbuns, artist, search, searchArtist } = this.state;
     return (
       <>
         <Header />
+        { loading && <p>Carregando...</p> }
         <div data-testid="page-search">
           <form>
             <label htmlFor="searchArtist">
@@ -39,6 +58,7 @@ class Search extends React.Component {
                 name=""
                 id="searchArtist"
                 placeholder="Artista"
+                value={ searchArtist }
                 onChange={ this.handleInputChange }
               />
             </label>
@@ -46,10 +66,42 @@ class Search extends React.Component {
               data-testid="search-artist-button"
               type="submit"
               disabled={ !validateBtn }
+              onClick={ this.findArtist }
             >
               Pesquisar
             </button>
           </form>
+          {search && (
+            <section>
+              <h2>
+                {`Resultado de álbuns de: ${artist}`}
+              </h2>
+              <div>
+                {listAlbuns.length === 0 ? <h2>Nenhum álbum foi encontrado</h2>
+                  : (
+                    <div>
+                      {' '}
+                      {listAlbuns
+                        .map(({ collectionId, artworkUrl100, collectionName }) => (
+                          <div
+                            key={ collectionId }
+                          >
+                            <img
+                              src={ artworkUrl100 }
+                              alt={ collectionName }
+                            />
+                            <NavLink
+                              to={ `/album/${collectionId}` }
+                              data-testid={ `link-to-album-${collectionId}` }
+                            >
+                              {collectionName}
+                            </NavLink>
+                          </div>
+                        ))}
+                    </div>
+                  )}
+              </div>
+            </section>)}
         </div>
       </>
     );
