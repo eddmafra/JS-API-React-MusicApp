@@ -3,7 +3,7 @@ import propTypes from 'prop-types';
 import Header from '../components/Header';
 import getMusics from '../services/musicsAPI';
 import MusicCard from '../components/MusicCard';
-import { removeSong, addSong } from '../services/favoriteSongsAPI';
+import { removeSong, addSong, getFavoriteSongs } from '../services/favoriteSongsAPI';
 
 class Album extends React.Component {
   constructor() {
@@ -21,7 +21,15 @@ class Album extends React.Component {
 
   componentDidMount() {
     this.fetchSongs();
+    this.fetchFavorites();
   }
+
+  fetchFavorites = async () => {
+    this.setState({ loading: true });
+    const favorites = await getFavoriteSongs();
+    this.setState({ loading: false,
+      listFavorites: favorites });
+  };
 
   fetchSongs = async () => {
     const { match: { params: { id } } } = this.props;
